@@ -136,24 +136,27 @@ class CastVoteView(APIView):
             except Exception:
                 pass  # Don't fail the vote if notification fails
 
-            # Send vote confirmation email
-            try:
-                send_mail(
-                    'SecureVote — Vote Confirmation',
-                    f'Hello {user.first_name},\n\n'
-                    f'Your vote in "{election.title}" has been recorded successfully.\n\n'
-                    f'Vote Hash: {vote_hash}\n'
-                    f'Election: {election.title}\n'
-                    f'Date: {timezone.now().strftime("%d %b %Y, %I:%M %p")}\n\n'
-                    f'This is your vote receipt. Keep it safe for your records.\n\n'
-                    f'Thank you for participating in the democratic process!\n'
-                    f'— SecureVote Team',
-                    settings.EMAIL_HOST_USER,
-                    [user.email],
-                    fail_silently=True,
-                )
-            except Exception:
-                pass  # Don't fail the vote if email fails
+            # Send vote confirmation email asynchronously
+            import threading
+            def send_confirm_email_bg():
+                try:
+                    send_mail(
+                        'SecureVote — Vote Confirmation',
+                        f'Hello {user.first_name},\n\n'
+                        f'Your vote in "{election.title}" has been recorded successfully.\n\n'
+                        f'Vote Hash: {vote_hash}\n'
+                        f'Election: {election.title}\n'
+                        f'Date: {timezone.now().strftime("%d %b %Y, %I:%M %p")}\n\n'
+                        f'This is your vote receipt. Keep it safe for your records.\n\n'
+                        f'Thank you for participating in the democratic process!\n'
+                        f'— SecureVote Team',
+                        settings.EMAIL_HOST_USER,
+                        [user.email],
+                        fail_silently=True,
+                    )
+                except Exception:
+                    pass
+            threading.Thread(target=send_confirm_email_bg).start()
 
             return Response({
                 'message': 'Vote cast successfully!',
@@ -216,20 +219,22 @@ class SendVoteOTPView(APIView):
         parts = user.email.split('@')
         masked = parts[0][0] + '***@' + parts[1] if len(parts) == 2 else '***'
 
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.EMAIL_HOST_USER,
-                [user.email],
-                fail_silently=False,
-            )
-            return Response({
-                'message': f'OTP sent to {masked}.',
-                'masked_email': masked,
-            })
-        except Exception as e:
-            return Response(
-                {'error': f'Failed to send OTP email: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        import threading
+        def send_otp_email_bg():
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.EMAIL_HOST_USER,
+                    [user.email],
+                    fail_silently=False,
+                )
+            except Exception:
+                pass
+
+        threading.Thread(target=send_otp_email_bg).start()
+
+        return Response({
+            'message': f'OTP sent to {masked}.',
+            'masked_email': masked,
+        })
