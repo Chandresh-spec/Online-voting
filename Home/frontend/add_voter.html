@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Voter — SecureVote Admin</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        .page-container {
+            max-width: 600px;
+            margin: 40px auto;
+        }
+        .form-card {
+            background: linear-gradient(145deg, #2A1D15, #1C120C);
+            border: 1px solid rgba(200, 134, 42, 0.25);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(200, 134, 42, 0.1);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            position: relative;
+        }
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        }
+        .page-header-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/admin-panel/" class="nav-brand">
+                <div class="logo">⚙️</div>
+                Admin Portal
+            </a>
+            <div class="nav-user">
+                <span class="user-name" id="admin-name">Loading...</span>
+                <button class="btn btn-sm btn-secondary" onclick="clearAuth(); window.location.href='/'">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container page-container">
+        <div class="form-card">
+            <div class="page-header-flex">
+                <h1 style="font-size: 2rem; margin: 0;">➕ Add Voter</h1>
+                <a href="/admin-panel/" class="btn btn-secondary">← Back to Dashboard</a>
+            </div>
+
+            <form id="add-voter-form">
+                <div class="form-group">
+                    <label class="form-label">Voter ID</label>
+                    <input type="text" class="form-input" id="vr-id" required placeholder="VID-XXXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="vr-name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="vr-email" required placeholder="voter@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mobile</label>
+                    <input type="text" class="form-input" id="vr-mobile" placeholder="+91 9876543210">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Village</label>
+                        <input type="text" class="form-input" id="vr-village" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">District</label>
+                        <input type="text" class="form-input" id="vr-district" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-input" id="vr-state" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nation</label>
+                        <input type="text" class="form-input" id="vr-nation" value="India" required>
+                    </div>
+                </div>
+                <div style="margin-top: 32px; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-lg btn-primary" id="btn-add">Add Voter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || (user.role !== 'admin' && user.role !== 'officer')) {
+            window.location.href = '/admin-login/';
+        }
+        document.getElementById('admin-name').textContent = user.first_name || 'Admin';
+
+        document.getElementById('add-voter-form').addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const btn = document.getElementById('btn-add');
+            btn.disabled = true;
+            btn.textContent = 'Adding...';
+            
+            try {
+                await createVoterRoll({ 
+                    voter_id: document.getElementById('vr-id').value.toUpperCase(), 
+                    full_name: document.getElementById('vr-name').value, 
+                    email: document.getElementById('vr-email').value, 
+                    mobile_number: document.getElementById('vr-mobile').value, 
+                    village: document.getElementById('vr-village').value, 
+                    district: document.getElementById('vr-district').value, 
+                    state: document.getElementById('vr-state').value, 
+                    nation: document.getElementById('vr-nation').value 
+                });
+                showToast('Voter added successfully!', 'success');
+                setTimeout(() => { window.location.href = '/admin-panel/'; }, 1500);
+            } catch(e) { 
+                showToast(e.data?.voter_id?.[0] || e.data?.email?.[0] || 'Error adding voter', 'error'); 
+                btn.disabled = false; 
+                btn.textContent = 'Add Voter';
+            }
+        });
+    </script>
+</body>
+</html>

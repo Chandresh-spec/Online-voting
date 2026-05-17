@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Election — SecureVote Admin</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        .page-container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+        .form-card {
+            background: linear-gradient(145deg, #2A1D15, #1C120C);
+            border: 1px solid rgba(200, 134, 42, 0.25);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(200, 134, 42, 0.1);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            position: relative;
+        }
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        }
+        .page-header-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/admin-panel/" class="nav-brand">
+                <div class="logo">⚙️</div>
+                Admin Portal
+            </a>
+            <div class="nav-user">
+                <span class="user-name" id="admin-name">Loading...</span>
+                <button class="btn btn-sm btn-secondary" onclick="clearAuth(); window.location.href='/'">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container page-container">
+        <div class="form-card">
+            <div class="page-header-flex">
+                <h1 style="font-size: 2rem; margin: 0;">Create Election</h1>
+                <a href="/admin-panel/" class="btn btn-secondary">← Back to Dashboard</a>
+            </div>
+
+            <form id="create-election-form">
+                <div class="form-group">
+                    <label class="form-label">Election Title</label>
+                    <input type="text" class="form-input" id="el-title" required placeholder="e.g. Village Panchayat 2026">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-input" id="el-desc" rows="3" placeholder="Brief details about the election..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Level</label>
+                        <select id="el-level" class="form-input" required onchange="toggleLevelFields()">
+                            <option value="village">🏘️ Village</option>
+                            <option value="state">🏛️ State</option>
+                            <option value="national">🇮🇳 National</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dynamic location fields based on level -->
+                <div id="village-fields" class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Village</label>
+                        <input type="text" class="form-input" id="el-village" placeholder="Village Name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">District</label>
+                        <input type="text" class="form-input" id="el-district-village" placeholder="District">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-input" id="el-state-village" placeholder="State">
+                    </div>
+                </div>
+
+                <div id="state-fields" class="form-row hidden">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-input" id="el-state" placeholder="State Name">
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Start Time (Local)</label>
+                        <input type="datetime-local" class="form-input" id="el-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time (Local)</label>
+                        <input type="datetime-local" class="form-input" id="el-end" required>
+                    </div>
+                </div>
+
+                <!-- Face verification security -->
+                <div class="form-group" style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-top: 16px;">
+                    <h3 style="margin-bottom: 12px; font-size: 1.1rem;">🔒 Security Verification</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Admin face verification is required to create a new election.</p>
+                    
+                    <div style="display:flex;gap:15px;align-items:start">
+                        <div style="width:160px;height:120px;background:#000;border-radius:8px;overflow:hidden;position:relative;border:2px solid var(--border)">
+                            <video id="live-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
+                            <canvas id="live-canvas" style="display:none"></canvas>
+                        </div>
+                        <div style="flex:1">
+                            <div style="display:flex;gap:8px;margin-bottom:12px">
+                                <div id="dot-1" class="dot waiting"></div>
+                                <div id="dot-2" class="dot waiting"></div>
+                            </div>
+                            <div id="live-status-text" style="font-weight:600;color:var(--warning);font-size:0.9rem;margin-bottom:10px">Initializing camera...</div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="startVerification()">Begin Verification</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="face-verified" value="false">
+                </div>
+
+                <div style="margin-top: 32px; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-lg btn-primary" id="btn-create" disabled>Create Election</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MediaPipe scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    
+    <script src="/static/js/api.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || (user.role !== 'admin' && user.role !== 'officer')) {
+            window.location.href = '/admin-login/';
+        }
+        document.getElementById('admin-name').textContent = user.first_name || 'Admin';
+
+        function toggleLevelFields() {
+            const level = document.getElementById('el-level').value;
+            const villageFields = document.getElementById('village-fields');
+            const stateFields = document.getElementById('state-fields');
+
+            villageFields.classList.add('hidden');
+            stateFields.classList.add('hidden');
+
+            if (level === 'village') villageFields.classList.remove('hidden');
+            else if (level === 'state') stateFields.classList.remove('hidden');
+        }
+
+        // Prefill default locations if available
+        document.getElementById('el-village').value = user.village || '';
+        document.getElementById('el-district-village').value = user.district || '';
+        document.getElementById('el-state-village').value = user.state || '';
+        document.getElementById('el-state').value = user.state || '';
+
+        // Real Face Verification Logic
+        let faceMesh = null;
+        let livenessState = 'INIT';
+        let elCamStream = null;
+
+        function setStatus(text, color) {
+            const el = document.getElementById('live-status-text');
+            el.textContent = text;
+            el.style.color = color;
+        }
+
+        function setDot(index, state) {
+            const el = document.getElementById(`dot-${index}`);
+            if (el) el.className = `dot ${state}`;
+        }
+
+        function initMediaPipe(videoElement) {
+            if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+                setStatus("Library Load Error", "var(--danger)"); return;
+            }
+            if (faceMesh) return;
+            
+            faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+            faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+            faceMesh.onResults(onFaceMeshResults);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    if (livenessState !== 'VERIFYING' && livenessState !== 'SUCCESS') {
+                        try { await faceMesh.send({image: videoElement}); } catch (e) {}
+                    }
+                },
+                width: 640, height: 480
+            });
+            camera.start();
+        }
+
+        async function startVerification() {
+            const btn = document.querySelector('button[onclick="startVerification()"]');
+            if (btn) btn.style.display = "none";
+            
+            if (!elCamStream) {
+                try {
+                    elCamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                    const videoEl = document.getElementById('live-video');
+                    videoEl.srcObject = elCamStream;
+                    await new Promise(resolve => { videoEl.onloadedmetadata = resolve; });
+                    videoEl.play();
+                    initMediaPipe(videoEl);
+                } catch(e) {
+                    setStatus("Camera Error", "var(--danger)"); return;
+                }
+            }
+            
+            livenessState = 'ALIGN';
+            setStatus("Detecting Face...", "var(--accent-light)");
+            setDot(1, 'active'); setDot(2, '');
+        }
+
+        function onFaceMeshResults(results) {
+            if (livenessState === 'INIT' || livenessState === 'VERIFYING') return;
+
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                if (livenessState !== 'ALIGN') {
+                    livenessState = 'ALIGN'; setStatus("Detecting Face...", "var(--accent-light)");
+                    setDot(1, 'active'); setDot(2, '');
+                }
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            
+            if (livenessState === 'ALIGN') {
+                const nose = landmarks[1];
+                if (nose.x > 0.3 && nose.x < 0.7 && nose.y > 0.3 && nose.y < 0.7) {
+                    livenessState = 'BLINK';
+                    setDot(1, 'passed'); setDot(2, 'active');
+                    setStatus("Slowly blink your eyes", "var(--text)");
+                } else { setStatus("Please center your face", "var(--warning)"); }
+            } 
+            else if (livenessState === 'BLINK') {
+                const leftUpper = landmarks[159].y, leftLower = landmarks[145].y;
+                const rightUpper = landmarks[386].y, rightLower = landmarks[374].y;
+                if ((leftLower - leftUpper) < 0.015 && (rightLower - rightUpper) < 0.015) {
+                    livenessState = 'READY';
+                    setDot(2, 'passed');
+                    setStatus("Hold still...", "var(--success)");
+                    setTimeout(() => verifyAdminFace(), 1000);
+                }
+            }
+        }
+
+        async function verifyAdminFace() {
+            livenessState = 'VERIFYING';
+            setStatus("Authenticating via AI...", "var(--warning)");
+
+            try {
+                const video = document.getElementById('live-video');
+                const canvas = document.getElementById('live-canvas');
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9));
+                
+                const fd = new FormData(); 
+                fd.append('live_image', blob, 'face.jpg');
+                
+                const token = getTokens()?.access;
+                const res = await fetch('/api/auth/verify-face/', { 
+                    method:'POST', 
+                    headers:{'Authorization':`Bearer ${token}`}, 
+                    body:fd 
+                });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Face verification failed');
+                
+                livenessState = 'SUCCESS';
+                setStatus("Identity Confirmed!", "var(--success)");
+                document.getElementById('face-verified').value = "true";
+                document.getElementById('btn-create').disabled = false;
+                
+                if (elCamStream) { elCamStream.getTracks().forEach(t => t.stop()); elCamStream = null; }
+            } catch(err) {
+                setStatus("Verification Failed: " + err.message, "var(--danger)");
+                const btn = document.querySelector('button[onclick="startVerification()"]');
+                if (btn) {
+                    btn.style.display = "inline-block";
+                    btn.textContent = "Retry Verification";
+                }
+            }
+        }
+
+        document.getElementById('create-election-form').addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            
+            if (document.getElementById('face-verified').value !== "true") {
+                showToast("Face verification is required.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-create');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            
+            const level = document.getElementById('el-level').value;
+            let elState = '', elVillage = '', elDistrict = '';
+            
+            if (level === 'village') { 
+                elVillage = document.getElementById('el-village').value.trim(); 
+                elDistrict = document.getElementById('el-district-village').value.trim();
+                elState = document.getElementById('el-state-village').value.trim(); 
+                if(!elVillage || !elDistrict || !elState){
+                    showToast('Village, District and State are required','error'); 
+                    btn.disabled = false; btn.textContent = 'Create Election'; return;
+                } 
+            } else if (level === 'state') { 
+                elState = document.getElementById('el-state').value.trim(); 
+                if(!elState){
+                    showToast('State is required','error'); 
+                    btn.disabled = false; btn.textContent = 'Create Election'; return;
+                } 
+            }
+            
+            try {
+                await createElection({ 
+                    title: document.getElementById('el-title').value, 
+                    description: document.getElementById('el-desc').value, 
+                    level, 
+                    constituency: level === 'village' ? elVillage : (level === 'state' ? elState : 'National'), 
+                    district: elDistrict, 
+                    state: elState, 
+                    village: elVillage, 
+                    start_time: new Date(document.getElementById('el-start').value).toISOString(), 
+                    end_time: new Date(document.getElementById('el-end').value).toISOString(), 
+                    status: 'active' 
+                });
+                showToast('Election created successfully!', 'success');
+                setTimeout(() => { window.location.href = '/admin-panel/'; }, 1500);
+            } catch(e) { 
+                showToast(e.data?.detail || e.message || 'Error creating election', 'error'); 
+                btn.disabled = false; 
+                btn.textContent = 'Create Election';
+            }
+        });
+
+        // Initialize camera stream early for preview
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+            .then(stream => { 
+                elCamStream = stream;
+                document.getElementById('live-video').srcObject = stream; 
+            })
+            .catch(err => console.log('Camera error', err));
+    </script>
+</body>
+</html>

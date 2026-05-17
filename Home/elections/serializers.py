@@ -37,12 +37,14 @@ class ElectionListSerializer(serializers.ModelSerializer):
     total_candidates = serializers.SerializerMethodField()
     is_active = serializers.BooleanField(read_only=True)
 
+    candidates = CandidateSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Election
         fields = [
             'id', 'title', 'level', 'constituency', 'state', 'district', 'village',
             'start_time', 'end_time', 'status', 'approval_status', 'is_active',
-            'total_candidates', 'created_at',
+            'total_candidates', 'candidates', 'created_at',
         ]
 
     def get_total_candidates(self, obj):

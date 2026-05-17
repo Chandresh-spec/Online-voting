@@ -261,7 +261,7 @@ async function advance(idx) {
             if (res.sent) {
                 otpSent = true; state.voter_name = res.voter_name;
                 setMsg(msg, `✓ OTP sent to ${res.masked_email}`, 'ok');
-                setTimeout(() => { moveNext(); if (res.dev_otp) { setTimeout(() => { const o = document.getElementById(`q-input-${idx+1}`); if(o) o.value = res.dev_otp; setMsg(document.getElementById(`q-msg-${idx+1}`), 'Auto-filled (Dev Mode)', 'inf'); }, 500); } }, 700);
+                setTimeout(() => { moveNext(); }, 700);
             } else { setMsg(msg, res.error || 'Not found in admin database.', 'err'); }
         } catch(e) { setMsg(msg, e.data?.error || 'Admin ID/Email not found in the admin database.', 'err'); }
         btn.disabled = false; btn.innerHTML = 'Send OTP →';

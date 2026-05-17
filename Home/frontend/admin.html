@@ -82,7 +82,7 @@
         <div class="card">
             <div class="action-bar">
                 <h3 class="card-title">Village Voter Roll</h3>
-                <button class="btn btn-primary btn-sm" onclick="openModal('add-voter-modal')">➕ Add Voter</button>
+                <a href="/admin-panel/add-voter/" class="btn btn-primary btn-sm">➕ Add Voter</a>
             </div>
             <div style="margin-bottom:14px">
                 <input type="text" id="voter-search" class="form-input" placeholder="🔍 Search by name, voter ID, or email..." oninput="filterVoters()" style="max-width:400px">
@@ -98,7 +98,7 @@
         <div class="card mb-3">
             <div class="action-bar">
                 <h3 class="card-title">Village Elections</h3>
-                <button class="btn btn-primary btn-sm" onclick="openElectionForm()">➕ Create Election</button>
+                <a href="/admin-panel/create-election/" class="btn btn-primary btn-sm">➕ Create Election</a>
             </div>
             <div style="margin-bottom:14px">
                 <input type="text" id="election-search" class="form-input" placeholder="🔍 Search elections by title or status..." oninput="filterElections()" style="max-width:400px">
@@ -951,7 +951,7 @@
                 <td>${aiScoreBadge(r.ai_score)}</td>
                 <td>${formatReqDate(r.created_at)}</td>
                 <td style="display:flex;gap:6px;flex-wrap:wrap">
-                    <button class="btn btn-sm btn-secondary" onclick="viewRegRequest(${r.id},'village_admin')">👁️ Review</button>
+                    <a class="btn btn-sm btn-secondary" href="/admin-panel/preview-user/?id=${r.id}&mode=village_admin">👁️ Review</a>
                 </td>
             </tr>`).join('');
         } catch(e) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Error loading.</td></tr>'; }
@@ -983,7 +983,7 @@
                 <td>${aiScoreBadge(r.ai_score)}</td>
                 <td>${formatReqDate(r.forwarded_at)}</td>
                 <td style="display:flex;gap:6px;flex-wrap:wrap">
-                    <button class="btn btn-sm btn-secondary" onclick="viewRegRequest(${r.id},'voter_admin')">👁️ Review</button>
+                    <a class="btn btn-sm btn-secondary" href="/admin-panel/preview-user/?id=${r.id}&mode=voter_admin">👁️ Review</a>
                 </td>
             </tr>`).join('');
         } catch(e) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Error loading.</td></tr>'; }

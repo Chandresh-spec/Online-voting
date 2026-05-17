@@ -257,12 +257,6 @@ async function handleForgotRequest() {
         document.getElementById('forgot-step-1').classList.add('hidden');
         document.getElementById('forgot-step-2').classList.remove('hidden');
         msg.innerHTML = '<span style="color:#22c55e">✓ ' + (res.message || 'OTP Sent') + '</span>';
-        
-        if (res.dev_otp) {
-            const otpInp = document.getElementById('f-otp');
-            if(otpInp) otpInp.value = res.dev_otp;
-            msg.innerHTML += '<br><span style="color:#3b82f6">Dev Mode: OTP is ' + res.dev_otp + '</span>';
-        }
     } catch(err) {
         console.error("Forgot Request Error:", err);
         const errMsg = (err.data && err.data.error) ? err.data.error : 'Request failed.';
@@ -543,16 +537,6 @@ async function advance(idx) {
                 setMsg(msg, `✓ OTP sent to ${res.masked_email}`, 'ok');
                 setTimeout(() => {
                     moveNext();
-                    // Dev mode auto-fill
-                    if (res.dev_otp) {
-                        setTimeout(() => {
-                            const otpInput = document.getElementById(`q-input-${idx + 1}`);
-                            if (otpInput) {
-                                otpInput.value = res.dev_otp;
-                                setMsg(document.getElementById(`q-msg-${idx + 1}`), 'Auto-filled for Dev Mode', 'inf');
-                            }
-                        }, 500);
-                    }
                 }, 700);
             } else {
                 setMsg(msg, res.error || 'You are not a voter.', 'err');
