@@ -401,8 +401,8 @@
         try {
             const d = await getElections();
             const all = d.results || d;
-            // Relaxed filtering so you can see elections even if village names don't exactly match
-            const ve = all.filter(e => e.level === 'village');
+            // Removed filtering by village level to allow State and National elections to be visible
+            const ve = all;
             electionCache = ve;
             document.getElementById('stat-elections').textContent = ve.length || 0;
             renderElectionTable(ve);
