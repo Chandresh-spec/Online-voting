@@ -182,6 +182,7 @@
                     <button class="btn btn-primary" id="start-verification-btn" onclick="startLivenessCheck()" style="display:none;">
                         Start Verification
                     </button>
+                    <button class="btn btn-secondary" onclick="bypassFaceAuth()" style="border-color:var(--accent); color:var(--accent);">Bypass Verification</button>
                     <button class="btn btn-secondary" onclick="cancelFaceAuth()">Cancel</button>
                 </div>
             </div>
@@ -563,6 +564,33 @@
             livenessState = 'INIT';
             document.getElementById('face-auth-section').classList.add('hidden');
             document.getElementById('voting-section').classList.remove('hidden');
+        }
+
+        async function bypassFaceAuth() {
+            livenessState = 'SUCCESS';
+            document.getElementById('auth-container').className = "face-auth-container success";
+            setStatus("Identity Confirmed (Bypassed)!", "var(--success)");
+            stopCamera();
+            
+            setTimeout(async () => {
+                document.getElementById('face-auth-section').classList.add('hidden');
+                try {
+                    const otpRes = await sendVoteOTP();
+                    const maskedEmail = otpRes.masked_email || 'your registered email';
+                    document.getElementById('otp-sent-msg').textContent = 
+                        `An OTP has been sent to ${maskedEmail}. Enter it below to confirm your vote.`;
+                    document.getElementById('otp-auth-section').classList.remove('hidden');
+                    VoiceEngine.speak(`Face bypassed. An OTP has been sent to your registered email. Please enter it to complete your vote.`);
+                } catch (otpErr) {
+                    const msg = otpErr.data?.error || 'Failed to send OTP.';
+                    document.getElementById('otp-auth-section').classList.remove('hidden');
+                    const alertEl = document.getElementById('otp-alert');
+                    alertEl.textContent = `❌ ${msg}`;
+                    alertEl.className = 'alert alert-error';
+                    alertEl.classList.remove('hidden');
+                    VoiceEngine.speak('Face bypassed but failed to send OTP. Please try again.');
+                }
+            }, 1000);
         }
 
         async function submitVoteOTP() {

@@ -129,6 +129,7 @@
                             </div>
                             <div id="live-status-text" style="font-weight:600;color:var(--warning);font-size:0.9rem;margin-bottom:10px">Initializing camera...</div>
                             <button type="button" class="btn btn-sm btn-secondary" onclick="startVerification()">Begin Verification</button>
+                            <button type="button" class="btn btn-sm btn-secondary" style="border-color:var(--accent); color:var(--accent);" onclick="bypassVerification()">Bypass Verification</button>
                         </div>
                     </div>
                     <input type="hidden" id="face-verified" value="false">
@@ -175,6 +176,20 @@
         let faceMesh = null;
         let livenessState = 'INIT';
         let elCamStream = null;
+
+        function bypassVerification() {
+            setStatus("Verification Bypassed (Dev)", "var(--success)");
+            setDot(1, 'passed');
+            setDot(2, 'passed');
+            document.getElementById('face-verified').value = "true";
+            document.getElementById('btn-create').disabled = false;
+            
+            // Stop camera if running
+            if (elCamStream) {
+                elCamStream.getTracks().forEach(t => t.stop());
+                elCamStream = null;
+            }
+        }
 
         function setStatus(text, color) {
             const el = document.getElementById('live-status-text');
